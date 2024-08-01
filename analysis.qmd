@@ -6,3 +6,42 @@ execute:
   echo: false
 ---
 
+
+Preceptor table: Will contain rows of candidates who ran for office that can be identified with their names. The outcome we are looking for is how long they live for post election. Covariates that might effect their age post election is their gender, whether they won or lost, their age at election time and their affiliated party. There is no treatment as it is a predictive model.
+
+
+
+$$death\_age = \beta_{0} + \beta_{1} treatment_i + \beta_{2}win\_margin_i + \\
+\beta_{4}repub_i + \beta_{5}thirdparty_i + \epsilon_{i}$$
+
+
+```{r}
+#| label: setup
+#| message: false
+#| cache: true
+
+library(tidyverse)
+library(primer.data)
+library(brms)
+library(tidybayes)
+library(gtsummary)
+
+x <- governors |> 
+  select(death_age, election_age, win_margin, party, sex) |> 
+  mutate(treatment = ifelse(win_margin > 0, "win", "lose")) |> 
+  filter(abs(win_margin) < 5) 
+
+fit_elec_1 <- brm(formula = death_age ~ treatment + win_margin +
+                 party,
+                  data = x,
+                  family = gaussian(),
+                  refresh = 0,
+                  silent = 2,
+                  seed = 9)
+
+fixef(fit_elec_1)
+
+tbl_regression(fit_elec_1, 
+               intercept = TRUE)
+```
+
